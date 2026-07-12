@@ -22,10 +22,9 @@ import {
   Briefcase,
   Users,
   Award,
-  ChevronRight,
   TrendingDown,
-  Percent,
-  Calendar
+  Calendar,
+  Copy
 } from "lucide-react";
 import { AgentState, AgentLog } from "@/lib/agent/types";
 
@@ -52,6 +51,9 @@ export default function Home() {
     companyName: "",
     logs: [],
   });
+
+  // Clipboard copy state
+  const [copiedState, setCopiedState] = useState<Record<string, boolean>>({});
 
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +203,16 @@ export default function Home() {
     }
   };
 
+  const copyToClipboard = (text: string, key: string) => {
+    if (typeof window === "undefined" || !navigator?.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedState(prev => ({ ...prev, [key]: true }));
+      setTimeout(() => {
+        setCopiedState(prev => ({ ...prev, [key]: false }));
+      }, 2000);
+    });
+  };
+
   const getStatusIcon = (status: AgentLog["status"]) => {
     switch (status) {
       case "pending":
@@ -260,6 +272,35 @@ export default function Home() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (scoreVal / 100) * circumference;
 
+  // Format SWOT for copying
+  const formatSwotForCopy = () => {
+    if (!agentState.swot) return "";
+    const s = agentState.swot.strengths.map(x => `- ${x}`).join("\n");
+    const w = agentState.swot.weaknesses.map(x => `- ${x}`).join("\n");
+    const o = agentState.swot.opportunities.map(x => `- ${x}`).join("\n");
+    const t = agentState.swot.threats.map(x => `- ${x}`).join("\n");
+    return `### SWOT Report: ${agentState.overview?.name || "Target"}\n\nSTRENGTHS:\n${s}\n\nWEAKNESSES:\n${w}\n\nOPPORTUNITIES:\n${o}\n\nTHREATS:\n${t}`;
+  };
+
+  // Format Financials for copying
+  const formatFinancialsForCopy = () => {
+    if (!agentState.financials) return "";
+    const f = agentState.financials;
+    return `Financials Report: ${agentState.overview?.name || "Target"} (Currency: ${f.currency || "USD"})\n` +
+      `Market Cap: ${f.marketCap || "N/A"}\n` +
+      `P/E Ratio: ${f.peRatio || "N/A"}\n` +
+      `P/S Ratio: ${f.psRatio || "N/A"}\n` +
+      `EV/Revenue: ${f.evToRevenue || "N/A"}\n` +
+      `EV/EBITDA: ${f.evToEbitda || "N/A"}\n` +
+      `Gross Margin: ${f.grossMargin || "N/A"}%\n` +
+      `Operating Margin: ${f.operatingMargin || "N/A"}%\n` +
+      `Revenue Growth YoY: ${f.revenueGrowthYoY || "N/A"}%\n` +
+      `Earnings Growth YoY: ${f.earningsGrowthYoY || "N/A"}%\n` +
+      `Debt to Equity: ${f.debtToEquity || "N/A"}\n` +
+      `Current Ratio: ${f.currentRatio || "N/A"}\n` +
+      `Free Cash Flow: ${f.freeCashFlow || "N/A"}`;
+  };
+
   return (
     <div className="app-container">
       {/* Header */}
@@ -278,7 +319,7 @@ export default function Home() {
             onClick={() => setShowKeys(!showKeys)}
           >
             <Settings2 size={14} />
-            {showKeys ? "Collapse Credentials" : "API Credentials"}
+            {showKeys ? "Hide Credentials" : "API Credentials"}
           </button>
         </div>
       </header>
@@ -375,9 +416,12 @@ export default function Home() {
 
           {/* Live Node Progress Terminal */}
           <div className="card" style={{ flex: 1, minHeight: "260px" }}>
-            <div className="card-title">
-              <Activity size={16} />
-              Graph Execution Logs
+            <div className="card-title" style={{ justifyContent: "space-between" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                <Activity size={16} />
+                Graph Execution Logs
+              </span>
+              {isRunning && <span className="pulse-indicator" />}
             </div>
             <div className="logs-panel">
               {agentState.logs.length === 0 ? (
@@ -454,7 +498,7 @@ export default function Home() {
             {agentState.overview && (
               <div className="animate-fade" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                 {/* Header Banner */}
-                <div className="card" style={{ padding: "1.25rem 1.75rem", flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+                <div className="card glass-card" style={{ padding: "1.25rem 1.75rem", flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
                       <Building2 size={20} style={{ color: "var(--primary)" }} />
@@ -568,9 +612,19 @@ export default function Home() {
                             </div>
                             
                             <div>
-                              <h4 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.375rem" }}>
-                                Executive Thesis
-                              </h4>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.375rem" }}>
+                                <h4 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  Executive Thesis
+                                </h4>
+                                <button 
+                                  className="btn btn-secondary btn-copy" 
+                                  style={{ width: "auto", padding: "0.25rem 0.5rem", fontSize: "0.7rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                                  onClick={() => copyToClipboard(agentState.decision?.investmentThesis || "", "thesis")}
+                                >
+                                  {copiedState["thesis"] ? <CheckCircle2 size={12} style={{ color: "var(--success)" }} /> : <Copy size={12} />}
+                                  {copiedState["thesis"] ? "Copied!" : "Copy"}
+                                </button>
+                              </div>
                               <p style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-main)", lineHeight: 1.5, fontStyle: "italic" }}>
                                 "{agentState.decision.investmentThesis}"
                               </p>
@@ -628,10 +682,20 @@ export default function Home() {
                                 <FileText size={16} />
                                 Formal Investment Committee Memorandum
                               </span>
-                              <span style={{ fontSize: "0.7rem", color: "var(--text-light)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                                <Calendar size={12} />
-                                Q3 2026 Audit
-                              </span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                <button 
+                                  className="btn btn-secondary btn-copy" 
+                                  style={{ width: "auto", padding: "0.25rem 0.5rem", fontSize: "0.7rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                                  onClick={() => copyToClipboard(agentState.decision?.summaryMemo || "", "memo")}
+                                >
+                                  {copiedState["memo"] ? <CheckCircle2 size={12} style={{ color: "var(--success)" }} /> : <Copy size={12} />}
+                                  {copiedState["memo"] ? "Copied Memorandum!" : "Copy Memo"}
+                                </button>
+                                <span style={{ fontSize: "0.7rem", color: "var(--text-light)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                  <Calendar size={12} />
+                                  Q3 2026 Audit
+                                </span>
+                              </div>
                             </div>
                             <div className="memo-text">
                               {agentState.decision.summaryMemo}
@@ -700,10 +764,20 @@ export default function Home() {
                     <div className="animate-fade">
                       {agentState.financials ? (
                         <div className="card">
-                          <h4 className="card-title">
-                            <PieChart size={16} />
-                            Key Financial Ratios (Currency: {agentState.financials.currency || "USD"})
-                          </h4>
+                          <div className="card-title" style={{ justifyContent: "space-between" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                              <PieChart size={16} />
+                              Key Financial Ratios (Currency: {agentState.financials.currency || "USD"})
+                            </span>
+                            <button 
+                              className="btn btn-secondary btn-copy" 
+                              style={{ width: "auto", padding: "0.25rem 0.5rem", fontSize: "0.7rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                              onClick={() => copyToClipboard(formatFinancialsForCopy(), "financials")}
+                            >
+                              {copiedState["financials"] ? <CheckCircle2 size={12} style={{ color: "var(--success)" }} /> : <Copy size={12} />}
+                              {copiedState["financials"] ? "Copied Ratios!" : "Copy Report"}
+                            </button>
+                          </div>
                           <div className="metrics-grid">
                             
                             {/* Valuation Multiples */}
@@ -828,10 +902,20 @@ export default function Home() {
                     <div className="animate-fade">
                       {agentState.swot ? (
                         <div className="card">
-                          <h4 className="card-title">
-                            <Layers size={16} />
-                            Strategic SWOT Matrix
-                          </h4>
+                          <div className="card-title" style={{ justifyContent: "space-between" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                              <Layers size={16} />
+                              Strategic SWOT Matrix
+                            </span>
+                            <button 
+                              className="btn btn-secondary btn-copy" 
+                              style={{ width: "auto", padding: "0.25rem 0.5rem", fontSize: "0.7rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                              onClick={() => copyToClipboard(formatSwotForCopy(), "swot")}
+                            >
+                              {copiedState["swot"] ? <CheckCircle2 size={12} style={{ color: "var(--success)" }} /> : <Copy size={12} />}
+                              {copiedState["swot"] ? "Copied Matrix!" : "Copy Matrix"}
+                            </button>
+                          </div>
                           <div className="swot-grid">
                             <div className="swot-box strengths">
                               <div className="swot-header">
