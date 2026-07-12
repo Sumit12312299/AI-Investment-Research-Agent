@@ -15,19 +15,62 @@ function addLog(logs: AgentLog[], node: string, message: string, status: "pendin
   ];
 }
 
+// Helper to clean raw unescaped newlines inside double-quoted JSON strings
+function cleanRawNewlinesInJson(jsonStr: string): string {
+  let result = "";
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+    if (char === '"' && !escape) {
+      inString = !inString;
+    }
+    if (inString) {
+      if (char === '\n') {
+        result += '\\n';
+      } else if (char === '\r') {
+        result += '\\r';
+      } else {
+        result += char;
+      }
+    } else {
+      result += char;
+    }
+    if (char === '\\' && !escape) {
+      escape = true;
+    } else {
+      escape = false;
+    }
+  }
+  return result;
+}
+
 // Helper to extract JSON from model response
 function parseJsonFromText(text: string): any {
   // Strip JS-style comments (both // and /* */) while preserving URLs like https://
   let cleaned = text.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, "$1");
   
+  // Clean raw newlines inside JSON strings
+  cleaned = cleanRawNewlinesInJson(cleaned);
+  
+  // Fix missing commas between objects/arrays/elements
+  cleaned = cleaned.replace(/}\s*{/g, "},{");
+  cleaned = cleaned.replace(/]\s*\[/g, "],[");
+  cleaned = cleaned.replace(/"\s*"/g, '","');
+  cleaned = cleaned.replace(/}\s*"/g, '},"');
+  cleaned = cleaned.replace(/"\s*{/g, '",{');
+  
+  // Clean trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,(\s*[\]}])/g, "$1");
+
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1) {
-    // Check if it's an array
     const arrStart = cleaned.indexOf("[");
     const arrEnd = cleaned.lastIndexOf("]");
     if (arrStart !== -1 && arrEnd !== -1) {
-      return JSON.parse(cleaned.slice(arrStart, arrEnd + 1));
+      const arrStr = cleaned.slice(arrStart, arrEnd + 1);
+      return JSON.parse(arrStr);
     }
     throw new Error("No JSON object or array found in LLM response:\n" + text);
   }
@@ -233,7 +276,9 @@ Deliver your final investment verdict:
 - keyMetricsAnalyzed: List 3-4 key metrics you evaluated (like P/E, Margins, Growth) with their value and your assessment.
 - summaryMemo: A formal, professional investment memo (3-4 paragraphs) explaining your reasoning, valuation details, business prospects, and milestones to watch.
 
-Return ONLY a JSON object in this format (do not include markdown ticks, conversational filler, or extra text):
+CRITICAL JSON COMPLIANCE: Return ONLY a single, valid JSON block. Make sure to escape all double-quotes inside strings as \\\", never output raw unescaped newlines in your string values (use \\n instead), and ensure all elements in arrays are separated by commas. Do not write any conversational text or comments.
+
+JSON Schema format:
 {
   "recommendation": "BUY",
   "score": 82,
