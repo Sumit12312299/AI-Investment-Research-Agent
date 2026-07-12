@@ -17,18 +17,21 @@ function addLog(logs: AgentLog[], node: string, message: string, status: "pendin
 
 // Helper to extract JSON from model response
 function parseJsonFromText(text: string): any {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
+  // Strip JS-style comments (both // and /* */) while preserving URLs like https://
+  let cleaned = text.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, "$1");
+  
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1) {
     // Check if it's an array
-    const arrStart = text.indexOf("[");
-    const arrEnd = text.lastIndexOf("]");
+    const arrStart = cleaned.indexOf("[");
+    const arrEnd = cleaned.lastIndexOf("]");
     if (arrStart !== -1 && arrEnd !== -1) {
-      return JSON.parse(text.slice(arrStart, arrEnd + 1));
+      return JSON.parse(cleaned.slice(arrStart, arrEnd + 1));
     }
     throw new Error("No JSON object or array found in LLM response:\n" + text);
   }
-  const jsonStr = text.slice(start, end + 1);
+  const jsonStr = cleaned.slice(start, end + 1);
   return JSON.parse(jsonStr);
 }
 
@@ -109,24 +112,26 @@ ${JSON.stringify(state.overview, null, 2)}
 Web Search Results:
 ${combinedResults || "No search results available. Use your internal knowledge base up to 2026."}
 
+All values in the financials object should be numbers, percentages, or strings as illustrated, or null if unavailable. The sentiment field in news must be either 'positive', 'negative', or 'neutral'.
+
 Return ONLY a JSON object in this format (do not include markdown ticks, conversational filler, or extra text):
 {
   "financials": {
-    "peRatio": 24.5, // number or null
-    "psRatio": 4.2, // number or null
-    "pbRatio": 3.1, // number or null
-    "evToRevenue": 5.0, // number or null
-    "evToEbitda": 14.2, // number or null
-    "revenueGrowthYoY": 12.8, // percentage, e.g. 12.8 for 12.8% or null
-    "earningsGrowthYoY": 9.5, // percentage or null
-    "grossMargin": 65.4, // percentage or null
-    "operatingMargin": 22.1, // percentage or null
-    "netMargin": 18.2, // percentage or null
-    "debtToEquity": 0.45, // ratio or null
-    "currentRatio": 1.7, // ratio or null
-    "freeCashFlow": "$1.2B (or descriptive string)",
-    "dividendYield": 1.2, // percentage or null
-    "marketCap": "$150B (or descriptive string)",
+    "peRatio": 24.5,
+    "psRatio": 4.2,
+    "pbRatio": 3.1,
+    "evToRevenue": 5.0,
+    "evToEbitda": 14.2,
+    "revenueGrowthYoY": 12.8,
+    "earningsGrowthYoY": 9.5,
+    "grossMargin": 65.4,
+    "operatingMargin": 22.1,
+    "netMargin": 18.2,
+    "debtToEquity": 0.45,
+    "currentRatio": 1.7,
+    "freeCashFlow": "$1.2B",
+    "dividendYield": 1.2,
+    "marketCap": "$150B",
     "currency": "USD"
   },
   "news": [
@@ -136,7 +141,7 @@ Return ONLY a JSON object in this format (do not include markdown ticks, convers
       "date": "Approximate Date/Time",
       "snippet": "1-2 sentence summary of what occurred.",
       "url": "URL if available",
-      "sentiment": "positive" // must be "positive" or "negative" or "neutral"
+      "sentiment": "positive"
     }
   ]
 }`;
@@ -220,7 +225,7 @@ ${JSON.stringify(dossier, null, 2)}
 
 Review the financials, business model, recent news sentiment, strengths, weaknesses, and competitors.
 Deliver your final investment verdict:
-- recommendation: BUY, HOLD, or PASS.
+- recommendation: BUY, HOLD, or PASS (must be exactly one of these).
 - score: A quantitative score from 0 (certain sell/pass) to 100 (highest conviction buy).
 - targetPrice: An estimated 12-month target price (or "N/A" if private or impossible to calculate).
 - investmentThesis: A clear, concise 2-3 sentence summary of the investment thesis.
@@ -230,8 +235,8 @@ Deliver your final investment verdict:
 
 Return ONLY a JSON object in this format (do not include markdown ticks, conversational filler, or extra text):
 {
-  "recommendation": "BUY", // must be "BUY" or "HOLD" or "PASS"
-  "score": 82, // integer 0 - 100
+  "recommendation": "BUY",
+  "score": 82,
   "targetPrice": "$240.00", 
   "investmentThesis": "Summarize the thesis here.",
   "risksAndMitigations": [
