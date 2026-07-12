@@ -458,7 +458,7 @@ export default function Home() {
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
                       <Building2 size={20} style={{ color: "var(--primary)" }} />
-                      <h2 style={{ fontSize: "1.35rem", fontWeight: 900, letter-spacing: "-0.02em" }}>{agentState.overview.name}</h2>
+                      <h2 style={{ fontSize: "1.35rem", fontWeight: 900, letterSpacing: "-0.02em" }}>{agentState.overview.name}</h2>
                       {agentState.overview.ticker && (
                         <span className="badge badge-neutral">{agentState.overview.ticker}</span>
                       )}
@@ -526,14 +526,14 @@ export default function Home() {
                           <div className="card">
                             <div className="decision-header">
                               <div className="decision-verdict">
-                                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letter-spacing: "0.05em" }}>Verdict Rating:</span>
+                                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Verdict Rating:</span>
                                 <span className={`recommendation-banner ${agentState.decision.recommendation}`}>
                                   {agentState.decision.recommendation}
                                 </span>
                               </div>
                               
                               <div className="score-container">
-                                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letter-spacing: "0.05em" }}>Conviction Score:</span>
+                                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Conviction Score:</span>
                                 
                                 {/* SVG Circular Gauge */}
                                 <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -568,7 +568,7 @@ export default function Home() {
                             </div>
                             
                             <div>
-                              <h4 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letter-spacing: "0.05em", marginBottom: "0.375rem" }}>
+                              <h4 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.375rem" }}>
                                 Executive Thesis
                               </h4>
                               <p style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-main)", lineHeight: 1.5, fontStyle: "italic" }}>
