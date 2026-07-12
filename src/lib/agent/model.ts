@@ -15,7 +15,7 @@ export function getModel(state: Partial<AgentState>) {
   } else if (geminiKey && geminiKey.trim() !== "") {
     return new ChatGoogleGenerativeAI({
       apiKey: geminiKey.trim(),
-      modelName: "gemini-1.5-flash",
+      modelName: "gemini-2.5-flash",
       temperature: 0.1,
     });
   } else {
