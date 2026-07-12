@@ -228,9 +228,10 @@ export default function Home() {
   };
 
   // Helper to parse percentages/ratios for horizontal mini progress bars
-  const getMarginScore = (valStr: string | null | undefined, type: "gross" | "operating" | "growth") => {
-    if (!valStr) return { pct: 40, status: "moderate" };
-    const num = parseFloat(valStr.replace(/[^\d.-]/g, ""));
+  const getMarginScore = (valStr: any, type: "gross" | "operating" | "growth") => {
+    if (valStr === null || valStr === undefined || valStr === "") return { pct: 40, status: "moderate" };
+    const str = String(valStr);
+    const num = parseFloat(str.replace(/[^\d.-]/g, ""));
     if (isNaN(num)) return { pct: 40, status: "moderate" };
     
     let pct = Math.max(0, Math.min(100, num));
