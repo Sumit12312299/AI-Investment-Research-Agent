@@ -49,17 +49,17 @@ function cleanRawNewlinesInJson(jsonStr: string): string {
 function parseJsonFromText(text: string): any {
   // Strip JS-style comments (both // and /* */) while preserving URLs like https://
   let cleaned = text.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, "$1");
-  
+
   // Clean raw newlines inside JSON strings
   cleaned = cleanRawNewlinesInJson(cleaned);
-  
+
   // Fix missing commas between objects/arrays/elements
   cleaned = cleaned.replace(/}\s*{/g, "},{");
   cleaned = cleaned.replace(/]\s*\[/g, "],[");
   cleaned = cleaned.replace(/"\s*"/g, '","');
   cleaned = cleaned.replace(/}\s*"/g, '},"');
   cleaned = cleaned.replace(/"\s*{/g, '",{');
-  
+
   // Clean trailing commas before closing braces/brackets
   cleaned = cleaned.replace(/,(\s*[\]}])/g, "$1");
 
@@ -84,7 +84,7 @@ function parseJsonFromText(text: string): any {
 export async function gatherOverviewNode(state: AgentState): Promise<Partial<AgentState>> {
   const nodeName = "Company Profiler";
   let logs = addLog(state.logs, nodeName, `Starting profiling for ${state.companyName}...`, "pending");
-  
+
   try {
     const model = getModel(state);
     const prompt = `You are a senior investment researcher. Given the company name "${state.companyName}", research and provide a structured company overview.
@@ -103,7 +103,7 @@ Return ONLY a JSON object with this exact schema (do not include markdown ticks 
     const response = await model.invoke(prompt);
     const content = typeof response.content === "string" ? response.content : JSON.stringify(response.content);
     const parsed = parseJsonFromText(content) as CompanyOverview;
-    
+
     logs = addLog(logs, nodeName, `Successfully profiled ${parsed.name} (${parsed.ticker || "N/A"}).`, "success");
     return {
       overview: parsed,
@@ -121,7 +121,7 @@ Return ONLY a JSON object with this exact schema (do not include markdown ticks 
 export async function gatherNewsAndFinancialsNode(state: AgentState): Promise<Partial<AgentState>> {
   const nodeName = "Market Investigator";
   let logs = addLog(state.logs, nodeName, `Searching the web for news and financials...`, "pending");
-  
+
   const companyName = state.overview?.name || state.companyName;
   const ticker = state.overview?.ticker || "";
   const tickerQuery = ticker && ticker !== "PRIVATE" ? ` (${ticker})` : "";
@@ -130,10 +130,10 @@ export async function gatherNewsAndFinancialsNode(state: AgentState): Promise<Pa
     // 1. Perform Searches
     const finQuery = `"${companyName}"${tickerQuery} financial metrics revenue net income P/E ratio growth 2025 2026`;
     const newsQuery = `"${companyName}"${tickerQuery} recent news stock performance market events 2026`;
-    
+
     logs = addLog(logs, nodeName, `Executing financial search: "${finQuery}"`, "info");
     const finResults = await searchWeb(finQuery, state.tavilyApiKey);
-    
+
     logs = addLog(logs, nodeName, `Executing news search: "${newsQuery}"`, "info");
     const newsResults = await searchWeb(newsQuery, state.tavilyApiKey);
 
@@ -211,7 +211,7 @@ Return ONLY a JSON object in this format (do not include markdown ticks, convers
 export async function analyzeSWOTNode(state: AgentState): Promise<Partial<AgentState>> {
   const nodeName = "SWOT Strategist";
   let logs = addLog(state.logs, nodeName, `Performing SWOT Analysis...`, "pending");
-  
+
   try {
     const model = getModel(state);
     const prompt = `You are a senior equity researcher. Based on the company overview and financials/news, generate a SWOT (Strengths, Weaknesses, Opportunities, Threats) analysis.
