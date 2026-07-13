@@ -2,6 +2,9 @@
 
 AegisInvest is an autonomous AI agent designed to perform institutional-grade investment research on any global company. Given a company name, the agent executes an agentic workflow to profile the business, scrape recent financial data and market multiples, evaluate market sentiment, build a strategic SWOT analysis, assess critical risk factors, and deliver a formal Investment Committee verdict (`BUY`, `HOLD`, or `PASS`) with a comprehensive reasoning memo.
 
+- **Live Deployment (Vercel)**: [https://ai-investment-research-agent.vercel.app](https://ai-investment-research-agent.vercel.app)
+- **GitHub Repository**: [https://github.com/Sumit12312299/AI-Investment-Research-Agent](https://github.com/Sumit12312299/AI-Investment-Research-Agent)
+
 ---
 
 ## 1. Overview — What It Does
